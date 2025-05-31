@@ -1,0 +1,2 @@
+# bm-friendlist
+Chrome extension

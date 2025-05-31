@@ -1,0 +1,46 @@
+{
+  "manifest_version": 3,
+  "name": "bm-friendlist",
+  "version": "3.0",
+  "description": "Extension shows steam friends on battlemetrics RCON.",
+  "author": "FlQyD",
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.battlemetrics.com/*"
+      ],
+      "run_at": "document_start",
+      "js": [
+        "./main.js"
+      ],
+      "css": [
+        "./main.css"
+      ]
+    }
+  ],
+  "background": {
+    "service_worker": "bg/service_worker.js",
+    "type": "module"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "modules/setup.js"
+      ],
+      "matches": [
+        "*://www.battlemetrics.com/*",
+        "*://battlemetrics.com/*"
+      ]
+    }
+  ],
+  "host_permissions": [
+    "*://api.battlemetrics.com/*",
+    "*://api.steampowered.com/*"
+  ],
+  "permissions": [
+    "storage",
+    "tabs",
+    "scripting",
+    "activeTab"
+  ]
+}
