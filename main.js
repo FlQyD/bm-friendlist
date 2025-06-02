@@ -25,7 +25,7 @@ async function checkIfPlayerPage(url) {
     const identifiersPage = urlArray.length === 7 && urlArray.includes("identifiers")
     const overviewPage = urlArray.length === 6;
     if (!identifiersPage && !overviewPage) return; //Not on identifier or overview page
-    
+
     if (currentPlayer == currentPlayerBmId) return; //Same player, different page, no need to reload
     currentPlayerBmId = currentPlayer;
 

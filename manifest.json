@@ -19,13 +19,20 @@
     }
   ],
   "background": {
-    "service_worker": "bg/service_worker.js",
+    "service_worker": "bg/serviceWorker.js",
     "type": "module"
   },
   "web_accessible_resources": [
     {
       "resources": [
-        "modules/setup.js"
+        "images/check.png",
+        "images/danger.png",
+        "images/unknown.png",
+        "images/noSignal.png",
+        "images/settings.png",
+        "modules/setup.js",
+        "modules/display.js",
+        "modules/settings.js"
       ],
       "matches": [
         "*://www.battlemetrics.com/*",
@@ -35,7 +42,8 @@
   ],
   "host_permissions": [
     "*://api.battlemetrics.com/*",
-    "*://api.steampowered.com/*"
+    "*://api.steampowered.com/*",
+    "*://rust-api.flqyd.dev/*"
   ],
   "permissions": [
     "storage",
