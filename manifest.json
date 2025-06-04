@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "bm-friendlist",
-  "version": "3.0",
+  "version": "1.0",
   "description": "Extension shows steam friends on battlemetrics RCON.",
   "author": "FlQyD",
   "content_scripts": [

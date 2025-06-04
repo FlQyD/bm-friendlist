@@ -3,7 +3,6 @@ const rustApiKey = localStorage.getItem("BMF_RUST_API_KEY");
 
 export async function setup() {
     if (await checkValues()) return;
-    
 
     let steamId = 0;
     for (let i = 0; steamId === 0 && i < 50; i++) {
@@ -33,10 +32,16 @@ export async function setup() {
 }
 
 async function getPlayerData(steamId) {
-    const steamFriends = await getSteamFriendList(steamId);
-    const rawSteamFriendsIds = typeof(steamFriends) === "string" ? [] : steamFriends.map(item => item.steamId);
+    let steamFriends = await getSteamFriendList(steamId);
+    let steamFriendsStatus = "";
+    
+    if (steamFriends === "Private") {
+        steamFriends = [];
+        steamFriendsStatus = "Private";
+    }
+    
+    const rawSteamFriendsIds = steamFriends.map(item => item.steamId);
     let historicFriends = await getHistoricFriends(steamId);
-    if (typeof (historicFriends) === "string") historicFriends = [];
 
     const realHistoricFriends = [];
     historicFriends.forEach(friend => {
@@ -59,32 +64,31 @@ async function getPlayerData(steamId) {
         if (chunkData == "Error") continue;
 
         playerData.push(...chunkData)
-        await new Promise((r) => { setTimeout(() => { r() }, 1000); })
+        await new Promise((r) => { setTimeout(() => { r() }, 500); })
     }
 
     const displaySteamFriends = [];
     const displayHistoricFriends = [];
 
-    if (typeof (steamFriends) != "string") {
-        steamFriends.forEach(friend => {
-            const newSteamFriend = {}
-            newSteamFriend.steamId = friend.steamId;
-            newSteamFriend.since = friend.friendSince;
+    steamFriends.forEach(friend => {
+        const newSteamFriend = {
+            steamId: friend.steamId,
+            since: friend.friendSince,
+            name: friend.steamId,
+            avatar: "unknown",
+            banData: "N/A"
+        }
 
-            newSteamFriend.name = friend.steamId;
-            newSteamFriend.avatar = "unknown";
-            newSteamFriend.banData = "N/A"
+        const currentPlayerData = playerData.find(item => item.steamId === newSteamFriend.steamId);
+        if (!currentPlayerData) return displaySteamFriends.push(newSteamFriend)
 
-            const currentPlayerData = playerData.find(item => item.steamId === newSteamFriend.steamId);
-            if (!currentPlayerData) return displaySteamFriends.push(newSteamFriend)
+        newSteamFriend.name = currentPlayerData.name;
+        newSteamFriend.avatar = currentPlayerData.avatar;
+        newSteamFriend.banData = currentPlayerData.banData;
 
-            newSteamFriend.name = currentPlayerData.name;
-            newSteamFriend.avatar = currentPlayerData.avatar;
-            newSteamFriend.banData = currentPlayerData.banData;
+        displaySteamFriends.push(newSteamFriend);
+    })
 
-            displaySteamFriends.push(newSteamFriend);
-        })
-    }
 
     realHistoricFriends.forEach(friend => {
         const newHistoricFriend = {};
@@ -105,9 +109,9 @@ async function getPlayerData(steamId) {
 
         displayHistoricFriends.push(newHistoricFriend)
     })
-
+    
     const { showFriends } = await import(chrome.runtime.getURL('./modules/display.js'));
-    showFriends(displaySteamFriends, displayHistoricFriends);
+    showFriends(displaySteamFriends, steamFriendsStatus, displayHistoricFriends);
 }
 
 
@@ -125,11 +129,11 @@ async function requestPlayerData(steamIds) {
     chrome.runtime.sendMessage({ type: "bm-friendlist-getSteamPlayerData", steamIds: steamIds, apiKey: steamApiKey });
 
     while (waiting) await new Promise(resolve => setTimeout(resolve, 100));
+    if (typeof(playerData) === "string") return [];
     return playerData;
-
 }
 async function getSteamFriendList(steamId) {
-    if (!steamApiKey) return "ERROR";
+    if (!steamApiKey) return [];
 
     let waiting = true;
     let friendlist = [];
@@ -142,6 +146,8 @@ async function getSteamFriendList(steamId) {
     chrome.runtime.sendMessage({ type: "bm-friendlist-getSteamFriendList", steamId: steamId, apiKey: steamApiKey });
 
     while (waiting) await new Promise(resolve => setTimeout(resolve, 100));
+    if (friendlist === "Private") return friendlist;
+    if (typeof (friendlist) === "string") return [];
     return friendlist;
 }
 async function getHistoricFriends(steamId) {
@@ -158,6 +164,7 @@ async function getHistoricFriends(steamId) {
     chrome.runtime.sendMessage({ type: "bm-friendlist-getHistoricFriendList", steamId: steamId, apiKey: rustApiKey });
 
     while (waiting) await new Promise(resolve => setTimeout(resolve, 100));
+    if (typeof (friendlist) === "string") return [];
     return friendlist;
 }
 
@@ -169,17 +176,16 @@ async function checkValues() {
     }
 
     const color = localStorage.getItem("bmf-colors");
-    console.log(color);
-    
+
     if (!color) {
         localStorage.setItem("bmf-colors",
             JSON.stringify(
                 {
-                    seenOnOrigin: "#00332f",
-                    seenOnFriend: "#292300"
+                    seenOnOrigin: "#00aaff10",
+                    seenOnFriend: "#ae6a3d10"
                 }
             )
         )
-    }
+    } 
     return false;
 }

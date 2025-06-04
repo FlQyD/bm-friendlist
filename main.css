@@ -45,6 +45,7 @@ body {
 .friend-title img {
     width: 50px;
     height: 50px;
+    margin-left: 20px;
     padding: 10px;
     transition: 0.4s;
 
@@ -145,7 +146,7 @@ body {
     position: absolute;
     top: 0;
     left: 0;
-    width: 240px;
+    width: 220px;
     height: 50px;
 
     background: #8e2121;
@@ -169,7 +170,7 @@ body {
 }
 
 .ban-data-wrapper:hover .ban-details {
-    transform: translateX(-240px);
+    transform: translateX(-220px);
     opacity: 1;
     pointer-events: auto;
 }

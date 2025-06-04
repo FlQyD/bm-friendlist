@@ -1,6 +1,6 @@
 const color = JSON.parse(localStorage.getItem("bmf-colors"));
 
-export async function showFriends(steamFriends, historicFriends) {
+export async function showFriends(steamFriends, steamFriendsStatus, historicFriends) {
     steamFriends = steamFriends.sort((a, b) => b.since - a.since);
     historicFriends = historicFriends.sort((a, b) => b.firstSeen - a.firstSeen);
 
@@ -8,7 +8,7 @@ export async function showFriends(steamFriends, historicFriends) {
     const container = getContainer();
     main.appendChild(container);
 
-    const steamFriendsElement = getSteamFriendsElement(steamFriends);
+    const steamFriendsElement = getSteamFriendsElement(steamFriends, steamFriendsStatus);
     container.appendChild(steamFriendsElement);
 
     const historicFriendsElement = getHistoricFriendElement(historicFriends);
@@ -22,7 +22,7 @@ function getContainer() {
     return container;
 }
 
-function getSteamFriendsElement(steamFriends) {
+function getSteamFriendsElement(steamFriends, steamFriendsStatus) {    
     const container = document.createElement("div");
     container.classList.add("friend-section")
 
@@ -31,7 +31,7 @@ function getSteamFriendsElement(steamFriends) {
     container.appendChild(titleDiv);
 
     const title = document.createElement("h2");
-    title.innerText = `Steam Friends(${steamFriends.length}):`
+    title.innerText = `Steam Friends(${steamFriendsStatus === "Private" ? steamFriendsStatus : steamFriends.length}):`
     titleDiv.appendChild(title);
 
     const settings = document.createElement("img");

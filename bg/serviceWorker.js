@@ -11,6 +11,12 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
             
 
             const resp = await fetch(`https://api.steampowered.com/ISteamUser/GetFriendList/v0001/?key=${STEAM_API_KEY}&steamid=${steamId}&relationship=friend`);
+            if (resp.status === 401) {
+                return chrome.tabs.sendMessage(sender.tab.id, {
+                    type: "bm-friendlist-getSteamFriendListResolved",
+                    friendlist: "Private"
+                });
+            }
             if (resp.status !== 200) throw new Error("Error while fetching, code: " + resp.status);
 
             const data = await resp.json();
@@ -40,6 +46,7 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
             const resp = await fetch(`https://rust-api.flqyd.dev/steamFriends/${steamId}?accessToken=${API_KEY}`);
             if (resp.status !== 200) throw new Error("Error while fetching friends, code: " + resp.status);
 
+
             const data = await resp.json();
             return chrome.tabs.sendMessage(sender.tab.id, {
                 type: "bm-friendlist-getHistoricFriendListResolved",
@@ -58,10 +65,12 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
             const steamIds = request.steamIds;
 
             const playerData = await requestSteamPlayerSummaries(steamIds, API_KEY)            
-            if (playerData === "Rate Limit") throw new Error("Rate Limit");
+            if (playerData === "Rate Limit") throw new Error("There was a Rate Limit Error, while fetching player data!");
+            if (playerData === "ERROR") throw new Error("There was an Error, while fetching player data!");
 
-            await new Promise(r => {setTimeout(() => {r()}, 1000)})
             const banData = await requestBanData(steamIds, API_KEY)
+            if (banData === "ERROR") console.error("There was an Error, while fetching ban data!");
+            if (banData === "Rate Limit") console.error("There was a Rate Limit Error, while fetching ban data!");
 
             const combinedData = [];
             playerData.forEach(item => {
@@ -71,13 +80,15 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
                     avatar: item.avatarhash,
                     banData: {}
                 }
-                
-                if (typeof(banData) == "string") {
+
+                if (typeof(banData) === "string") {
                     player.banData = "N/A"
                     return combinedData.push(player);
                 }
-                
+
                 const banDataItem = banData.find(item => item.SteamId === player.steamId);
+                if (!banDataItem) return combinedData.push(player);
+                
                 player.banData.vacBans = banDataItem.NumberOfVACBans;
                 player.banData.gameBans = banDataItem.NumberOfGameBans;
                 player.banData.daysSinceLast = banDataItem.DaysSinceLastBan;
@@ -98,8 +109,6 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
     }
 })
 
-
-
 async function requestSteamPlayerSummaries(steamIds, API_KEY, count = 0) {
     if (count > 1) return "ERROR";
     try {
@@ -116,6 +125,7 @@ async function requestSteamPlayerSummaries(steamIds, API_KEY, count = 0) {
         return requestSteamPlayerSummaries(steamIds, API_KEY, count+1);
     }
 }
+
 async function requestBanData(steamIds, API_KEY, count = 0) {
     if (count > 1) return "ERROR";
     try {

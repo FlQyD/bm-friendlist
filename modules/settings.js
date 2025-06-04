@@ -114,8 +114,8 @@ function getColorSettings() {
 
     if (!savedColors) {
         savedColors = {
-            seenOnOrigin: "#005eff1a",
-            seenOnFriend: "#ff55001a"
+            seenOnOrigin: "#00aaff10",
+            seenOnFriend: "#ae6a3d10"
         };
     }
 
@@ -131,7 +131,7 @@ function getColorSettings() {
         input.value = savedColors[key].substring(0, 7);
 
         input.addEventListener("input", () => {            
-            savedColors[key] = input.value;
+            savedColors[key] = input.value+"10";            
             localStorage.setItem("bmf-colors", JSON.stringify(savedColors));
         });
 
