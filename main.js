@@ -30,5 +30,5 @@ async function checkIfPlayerPage(url) {
     currentPlayerBmId = currentPlayer;
 
     const { setup } = await import(chrome.runtime.getURL('./modules/setup.js'));
-    setup()
+    setup(currentPlayer);
 }

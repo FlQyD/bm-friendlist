@@ -1,12 +1,15 @@
 const steamApiKey = localStorage.getItem('BMF_STEAM_API_KEY');
 const rustApiKey = localStorage.getItem("BMF_RUST_API_KEY");
 
-export async function setup() {
+export async function setup(bmId) {
     if (await checkValues()) return;
 
     let steamId = 0;
     for (let i = 0; steamId === 0 && i < 50; i++) {
         await new Promise(r => { setTimeout(() => { r() }, 100 + (i / 10 * 100)); })
+        const onTheRightPage = await checkIfStillOnTheRightPage(bmId);
+        if (!onTheRightPage) return; //Not on the right player page or on a player page at all.
+        
         const items = document.getElementsByClassName("css-8uhtka");
 
         if (items.length === 0) continue;
@@ -28,10 +31,13 @@ export async function setup() {
         return;
     }
 
-    getPlayerData(steamId);
+    const onTheRightPage = checkIfStillOnTheRightPage(bmId);
+    if (!onTheRightPage) return;
+
+    getPlayerData(steamId, bmId);
 }
 
-async function getPlayerData(steamId) {
+async function getPlayerData(steamId, bmId) {
     let steamFriends = await getSteamFriendList(steamId);
     let steamFriendsStatus = "";
     
@@ -110,11 +116,12 @@ async function getPlayerData(steamId) {
         displayHistoricFriends.push(newHistoricFriend)
     })
     
+    const onTheRightPage = checkIfStillOnTheRightPage(bmId);
+    if (!onTheRightPage) return;
+
     const { showFriends } = await import(chrome.runtime.getURL('./modules/display.js'));
     showFriends(displaySteamFriends, steamFriendsStatus, displayHistoricFriends);
 }
-
-
 async function requestPlayerData(steamIds) {
     if (!steamApiKey) return "Error";
 
@@ -167,7 +174,6 @@ async function getHistoricFriends(steamId) {
     if (typeof (friendlist) === "string") return [];
     return friendlist;
 }
-
 async function checkValues() {
     if (!steamApiKey && !rustApiKey) {
         const { printSidebar } = await import(chrome.runtime.getURL('./modules/settings.js'));
@@ -188,4 +194,21 @@ async function checkValues() {
         )
     } 
     return false;
+}
+async function checkIfStillOnTheRightPage(staticBmId) {
+    const url = window.location.href;
+    const urlArray = url.split("/")
+    
+    const bmId = urlArray[5];
+    if (!bmId) return false;
+    if (isNaN(Number(bmId))) return false;
+
+    if (bmId !== staticBmId) return false;
+
+    const isOverview = urlArray.length === 6;
+    const isIdentifiers = urlArray.length === 7 && urlArray[6] === "identifiers";
+
+    if (!isIdentifiers && !isOverview) return false;
+
+    return true;
 }
