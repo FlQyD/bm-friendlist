@@ -87,7 +87,10 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
                 }
 
                 const banDataItem = banData.find(item => item.SteamId === player.steamId);
-                if (!banDataItem) return combinedData.push(player);
+                if (!banDataItem) {
+                    player.banData = "N/A";
+                    return combinedData.push(player);
+                } 
                 
                 player.banData.vacBans = banDataItem.NumberOfVACBans;
                 player.banData.gameBans = banDataItem.NumberOfGameBans;

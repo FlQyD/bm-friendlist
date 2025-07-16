@@ -139,7 +139,7 @@ async function requestPlayerData(steamIds) {
     if (typeof(playerData) === "string") return [];
     return playerData;
 }
-async function getSteamFriendList(steamId) {
+export async function getSteamFriendList(steamId) {
     if (!steamApiKey) return [];
 
     let waiting = true;
@@ -157,7 +157,7 @@ async function getSteamFriendList(steamId) {
     if (typeof (friendlist) === "string") return [];
     return friendlist;
 }
-async function getHistoricFriends(steamId) {
+export async function getHistoricFriends(steamId) {
     if (!rustApiKey) return "Error"
 
     let waiting = true;
