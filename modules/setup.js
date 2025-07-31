@@ -9,7 +9,7 @@ export async function setup(bmId) {
         await new Promise(r => { setTimeout(() => { r() }, 100 + (i / 10 * 100)); })
         const onTheRightPage = await checkIfStillOnTheRightPage(bmId);
         if (!onTheRightPage) return; //Not on the right player page or on a player page at all.
-        
+
         const items = document.getElementsByClassName("css-8uhtka");
 
         if (items.length === 0) continue;
@@ -40,12 +40,12 @@ export async function setup(bmId) {
 async function getPlayerData(steamId, bmId) {
     let steamFriends = await getSteamFriendList(steamId);
     let steamFriendsStatus = "";
-    
+
     if (steamFriends === "Private") {
         steamFriends = [];
         steamFriendsStatus = "Private";
     }
-    
+
     const rawSteamFriendsIds = steamFriends.map(item => item.steamId);
     let historicFriends = await getHistoricFriends(steamId);
 
@@ -97,11 +97,14 @@ async function getPlayerData(steamId, bmId) {
 
 
     realHistoricFriends.forEach(friend => {
+        console.log(friend);
+
         const newHistoricFriend = {};
         newHistoricFriend.name = friend.steamId;
         newHistoricFriend.steamId = friend.steamId;
         newHistoricFriend.firstSeen = friend.firstSeen;
         newHistoricFriend.lastSeen = friend.lastSeen;
+        newHistoricFriend.since = friend.since;
         newHistoricFriend.origin = friend.origin;
         newHistoricFriend.banData = "N/A";
         newHistoricFriend.avatar = "unknown";
@@ -115,7 +118,7 @@ async function getPlayerData(steamId, bmId) {
 
         displayHistoricFriends.push(newHistoricFriend)
     })
-    
+
     const onTheRightPage = checkIfStillOnTheRightPage(bmId);
     if (!onTheRightPage) return;
 
@@ -136,7 +139,7 @@ async function requestPlayerData(steamIds) {
     chrome.runtime.sendMessage({ type: "bm-friendlist-getSteamPlayerData", steamIds: steamIds, apiKey: steamApiKey });
 
     while (waiting) await new Promise(resolve => setTimeout(resolve, 100));
-    if (typeof(playerData) === "string") return [];
+    if (typeof (playerData) === "string") return [];
     return playerData;
 }
 export async function getSteamFriendList(steamId) {
@@ -158,7 +161,7 @@ export async function getSteamFriendList(steamId) {
     return friendlist;
 }
 export async function getHistoricFriends(steamId) {
-    if (!rustApiKey) return "Error"
+    if (!rustApiKey) return [];
 
     let waiting = true;
     let friendlist = [];
@@ -192,13 +195,13 @@ async function checkValues() {
                 }
             )
         )
-    } 
+    }
     return false;
 }
 async function checkIfStillOnTheRightPage(staticBmId) {
     const url = window.location.href;
     const urlArray = url.split("/")
-    
+
     const bmId = urlArray[5];
     if (!bmId) return false;
     if (isNaN(Number(bmId))) return false;

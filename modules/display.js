@@ -2,7 +2,7 @@ const color = JSON.parse(localStorage.getItem("bmf-colors"));
 
 export async function showFriends(steamFriends, steamFriendsStatus, historicFriends) {
     steamFriends = steamFriends.sort((a, b) => b.since - a.since);
-    historicFriends = historicFriends.sort((a, b) => b.firstSeen - a.firstSeen);
+    historicFriends = historicFriends.sort((a, b) => (b.since || b.firstSeen) - (a.since || a.firstSeen));
 
     const main = document.getElementById("RCONContainer");
     const container = getContainer();
@@ -90,27 +90,28 @@ function createFriendElement(friend) {
     name.innerText = friend.name;
     details.appendChild(name);
 
-    if (friend.since) {
-        const since = friend.since * 1000;
-
-        const sinceElement = document.createElement("p");
-        sinceElement.innerText = `Since: ${new Date(since).toISOString().substring(0, 10).replaceAll("-", ". ") + "."} (${Math.floor((Date.now() - since) / (24 * 60 * 60 * 1000))} days)`;
-        details.appendChild(sinceElement)
+    if (friend.lastSeen) {
+        const lastSeen = friend.lastSeen * 1000;
+        
+        const lastSeenElement = document.createElement("p");
+        lastSeenElement.innerText = `Last Seen: ${new Date(lastSeen).toISOString().substring(0, 10).replaceAll("-", ". ") + "."} (${Math.floor((Date.now() - lastSeen) / (24 * 60 * 60 * 1000))} days)`
+        details.appendChild(lastSeenElement);
     }
-
-    if (friend.firstSeen) {
+    
+    if (friend.since === 0 && friend.firstSeen) {
         const firstSeen = friend.firstSeen * 1000;
 
         const firstSeenElement = document.createElement("p");
         firstSeenElement.innerText = `First Seen: ${new Date(firstSeen).toISOString().substring(0, 10).replaceAll("-", ". ") + "."} (${Math.floor((Date.now() - firstSeen) / (24 * 60 * 60 * 1000))} days)`
         details.appendChild(firstSeenElement);
     }
-    if (friend.lastSeen) {
-        const lastSeen = friend.lastSeen * 1000;
 
-        const lastSeenElement = document.createElement("p");
-        lastSeenElement.innerText = `Last Seen: ${new Date(lastSeen).toISOString().substring(0, 10).replaceAll("-", ". ") + "."} (${Math.floor((Date.now() - lastSeen) / (24 * 60 * 60 * 1000))} days)`
-        details.appendChild(lastSeenElement);
+    if (friend.since) {
+        const since = friend.since * 1000;
+
+        const sinceElement = document.createElement("p");
+        sinceElement.innerText = `Since: ${new Date(since).toISOString().substring(0, 10).replaceAll("-", ". ") + "."} (${Math.floor((Date.now() - since) / (24 * 60 * 60 * 1000))} days)`;
+        details.appendChild(sinceElement)
     }
 
     const banData = getBanData(friend.banData);
@@ -183,9 +184,6 @@ async function getComparator() {
     input.placeholder = "Steam ID | 76561...";
 
     const { getSteamFriendList, getHistoricFriends } = await import(chrome.runtime.getURL('./modules/setup.js'));
-
-
-
     input.addEventListener("change", async e => {
         const input = e.target;
         input.classList.remove("input-red");
