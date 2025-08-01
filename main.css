@@ -76,7 +76,7 @@ body {
     padding: 0;
 }
 
-.friend-container {
+.player-container {
     display: flex;
     gap: 5px;
 
@@ -96,13 +96,13 @@ body {
     transform: translateX(-3px);
 }
 
-.friend-container img {
+.player-container img {
     width: 50px;
     height: 50px;
 }
 
 .friend-details {
-    min-width: 230px;
+    min-width: 214px;
     display: flex;
     flex-direction: column;
 
@@ -358,4 +358,54 @@ body {
 .input-red {
     border: 2px solid #ff0505 !important;
     background: linear-gradient(0deg, #ff0505 0%, #22222200 5%, #22222200 95%, #ff0505 100%), linear-gradient(90deg, #ff0505 0%, #222222 1%, #222222 99%, #ff0505 100%) !important;
+}
+
+
+
+
+
+
+
+
+
+#team-container h1,
+#team-container h2,
+#team-container p {
+    margin: 0;
+    padding: 0;
+}
+
+#team-container {
+    position: absolute;
+    top: 50px;
+    left: calc(50dvw - (585px + 345px));
+    
+    padding: 10px 10px;
+    
+    width: 330px;
+    min-width: 330px;
+    max-width: 330px;
+    min-height: 50px;
+    
+    background: #222222;
+    
+    display: flex;
+    flex-direction: column;
+    
+}
+#team-container h2{
+    font-size: 20px;
+    padding-top: 15px !important;
+}
+#team-header{
+    display: flex;
+    justify-content: space-between;
+}
+#team-server-name{
+    width: 310px;
+    overflow: hidden;
+    text-wrap: nowrap;
+    text-overflow: ellipsis;
+    margin-top: 2px !important;
+    margin-bottom: 10px !important;
 }

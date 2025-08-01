@@ -38,7 +38,13 @@ export async function setup(bmId) {
 }
 
 async function getPlayerData(steamId, bmId) {
-    let steamFriends = await getSteamFriendList(steamId);
+    let [steamFriends, historicFriends, teaminfo] = await Promise.all([
+        getSteamFriendList(steamId),
+        getHistoricFriends(steamId),
+        getTeaminfo(bmId, steamId)
+    ]);
+
+
     let steamFriendsStatus = "";
 
     if (steamFriends === "Private") {
@@ -47,7 +53,6 @@ async function getPlayerData(steamId, bmId) {
     }
 
     const rawSteamFriendsIds = steamFriends.map(item => item.steamId);
-    let historicFriends = await getHistoricFriends(steamId);
 
     const realHistoricFriends = [];
     historicFriends.forEach(friend => {
@@ -59,6 +64,11 @@ async function getPlayerData(steamId, bmId) {
     realHistoricFriends.forEach(friend => {
         currentSteamIds.push(friend.steamId);
     })
+    if (typeof (teaminfo) !== "string") {
+        teaminfo.members.forEach(teammate => {
+            if (!currentSteamIds.includes(teammate)) currentSteamIds.push(teammate)
+        })
+    }
 
     const playerData = [];
 
@@ -95,10 +105,25 @@ async function getPlayerData(steamId, bmId) {
         displaySteamFriends.push(newSteamFriend);
     })
 
+    if (typeof (teaminfo) !== "string")
+        teaminfo.members = teaminfo.members.map(member => {
+            const playerInfo = {
+                steamId: member,
+                name: member,
+                avatar: "unknown",
+                banData: "N/A"
+            }
+
+            const currentPlayerData = playerData.find(item => item.steamId === member);
+            if (!currentPlayerData) return playerInfo;
+
+            playerInfo.name = currentPlayerData.name;
+            playerInfo.avatar = currentPlayerData.avatar;
+            playerInfo.banData = currentPlayerData.banData;
+            return playerInfo
+        })
 
     realHistoricFriends.forEach(friend => {
-        console.log(friend);
-
         const newHistoricFriend = {};
         newHistoricFriend.name = friend.steamId;
         newHistoricFriend.steamId = friend.steamId;
@@ -122,8 +147,9 @@ async function getPlayerData(steamId, bmId) {
     const onTheRightPage = checkIfStillOnTheRightPage(bmId);
     if (!onTheRightPage) return;
 
-    const { showFriends } = await import(chrome.runtime.getURL('./modules/display.js'));
+    const { showFriends, showTeamMembers } = await import(chrome.runtime.getURL('./modules/display.js'));
     showFriends(displaySteamFriends, steamFriendsStatus, displayHistoricFriends);
+    showTeamMembers(teaminfo)
 }
 async function requestPlayerData(steamIds) {
     if (!steamApiKey) return "Error";
@@ -214,4 +240,117 @@ async function checkIfStillOnTheRightPage(staticBmId) {
     if (!isIdentifiers && !isOverview) return false;
 
     return true;
+}
+
+
+async function getTeaminfo(bmId, steamId) {
+    const element = document.getElementById("oauthToken");
+    const authToken = element && element.innerText ? element.innerText : "";
+    if (!authToken) return "error";
+
+    const lastServer = await getLastServer(bmId, authToken);
+    if (!lastServer) return "error"
+
+    const teaminfoString = await runTeaminfoCommand(steamId, lastServer.id, authToken)
+    if (teaminfoString === "error") return "error";
+    if (teaminfoString === "Player is not in a team" || teaminfoString === "Player not found") {
+        return { teamId: -1, members: [], server: lastServer.name, raw: teaminfoString }
+    }
+
+    const teamMembers = [];
+    let teamId = -1;
+    teaminfoString.split("\n").forEach(line => {
+        if (line.length < 10 && line.includes("ID: ")) teamId = line.split(" ")[1];
+        if (!line.includes("76561")) return;
+
+        teamMembers.push(line.substring(0, 17));
+    })
+
+    const teamInfo = {};
+    teamInfo.teamId = teamId;
+    teamInfo.members = teamMembers;
+    teamInfo.server = lastServer.name;
+    return teamInfo
+}
+
+async function getLastServer(bmId, authToken) {
+    const myServers = await getMyServers(authToken);
+
+    const resp = await fetch(`https://api.battlemetrics.com/players/${bmId}?version=^0.1.0&include=server&filter[servers]=${myServers.join(",")}&access_token=${authToken}`);
+    if (resp.status !== 200) {
+        console.error(`Failed to get recent server | Status: ${resp?.status}`);
+        return null;
+    }
+
+    const data = await resp.json();
+    const servers = data.included
+        .filter(item => item.type === "server")
+        .map(server => {
+            return {
+                name: server.attributes?.name,
+                id: server.id,
+                lastPlayed: new Date(server.meta.lastSeen).getTime()
+            }
+        })
+        .sort((a, b) => b.lastPlayed - a.lastPlayed);
+
+    const lastServer = servers[0];
+    if (!lastServer) return null;
+    if (Date.now() - 2 * 24 * 60 * 60 * 1000 > lastServer.lastPlayed) return null;
+
+    return lastServer
+}
+async function getMyServers(authToken) {
+    let myServers = JSON.parse(localStorage.getItem("BMF_SERVER_CACHE"));
+    if (myServers && myServers.timestamp > Date.now() - 24 * 60 * 60 * 1000) return myServers.servers;
+
+    const resp = await fetch(`https://api.battlemetrics.com/servers?version=^0.1.0&filter[rcon]=true&page[size]=100&access_token=${authToken}`)
+    if (resp?.status !== 200) {
+        console.error(`Failed to request your servers | Status: ${resp?.status}`);
+        return null;
+    }
+
+    const data = await resp.json();
+    myServers = {
+        timestamp: Date.now(),
+        servers: data.data.map(server => server.id)
+    }
+    localStorage.setItem("BMF_SERVER_CACHE", JSON.stringify(myServers))
+
+    return myServers.servers;
+}
+async function runTeaminfoCommand(steamId, serverId, authToken) {
+    const resp = await fetch(`https://api.battlemetrics.com/servers/${serverId}/command`, {
+        method: "POST",
+        headers: {
+            "Authorization": `Bearer ${authToken}`,
+            "Content-Type": "application/json",
+            "Accept-Version": "^0.1.0"
+        },
+        body: JSON.stringify({
+            data: {
+                type: "rconCommand",
+                attributes: {
+                    command: "raw",
+                    options: {
+                        raw: `teaminfo ${steamId}`
+                    }
+                }
+            }
+        })
+    })
+
+    if (resp.status !== 200) {
+        console.error(`Failed to request teaminfo | Status: ${resp.status}`);
+        return "error";
+    }
+
+    const data = await resp.json();
+    const result = data.data?.attributes?.result
+    if (!result) {
+        console.error(`Failed to request teaminfo | Status: ${resp.status} | Result: ${result}`);
+        return "error";
+    }
+
+    return result;
 }
