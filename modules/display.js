@@ -111,12 +111,13 @@ async function getComparator() {
         historicFriends.forEach(friend => {
             if (!combinedFriends.includes(friend.steamId))
                 combinedFriends.push(friend.steamId);
-        })
+        })        
 
         input.classList.remove("input-yellow");
         input.classList.add("input-green");
 
-        const friends = document.querySelectorAll(".friend-container");
+        const friends = document.querySelectorAll(".player-container");
+        
         friends.forEach(friend => {
             if (combinedFriends.includes(friend.title))
                 friend.classList.add("friend-highlight");
