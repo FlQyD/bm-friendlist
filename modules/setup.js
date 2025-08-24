@@ -245,16 +245,28 @@ async function checkIfStillOnTheRightPage(staticBmId) {
 
 async function getTeaminfo(bmId, steamId) {
     const element = document.getElementById("oauthToken");
+
     const authToken = element && element.innerText ? element.innerText : "";
     if (!authToken) return "error";
 
     const lastServer = await getLastServer(bmId, authToken);
     if (!lastServer) return "error"
 
-    const teaminfoString = await runTeaminfoCommand(steamId, lastServer.id, authToken)
+    console.log(lastServer);
+
+
+    let teaminfoString = "";
+    //BattleZone
+    if (lastServer.orgId === "29251") teaminfoString = await getBzTeamInfo(steamId, lastServer.id, authToken)
+    //BestRust
+    if (lastServer.orgId === "18611") teaminfoString = await getBrTeamInfo(steamId, lastServer.id, authToken);
+    if (!teaminfoString || teaminfoString === "error") return { teamId: "error", members: [], server: lastServer.name, raw: teaminfoString }
+
+
+
     if (teaminfoString === "error") return "error";
     if (teaminfoString === "Player is not in a team" || teaminfoString === "Player not found") {
-        return { teamId: -1, members: [], server: lastServer.name, raw: teaminfoString }
+        return { teamId: "error", members: [], server: lastServer.name, raw: teaminfoString }
     }
 
     const teamMembers = [];
@@ -289,12 +301,14 @@ async function getLastServer(bmId, authToken) {
             return {
                 name: server.attributes?.name,
                 id: server.id,
+                orgId: server.relationships.organization.data.id,
                 lastPlayed: new Date(server.meta.lastSeen).getTime()
             }
         })
         .sort((a, b) => b.lastPlayed - a.lastPlayed);
 
     const lastServer = servers[0];
+
     if (!lastServer) return null;
     if (Date.now() - 2 * 24 * 60 * 60 * 1000 > lastServer.lastPlayed) return null;
 
@@ -319,7 +333,7 @@ async function getMyServers(authToken) {
 
     return myServers.servers;
 }
-async function runTeaminfoCommand(steamId, serverId, authToken) {
+async function getBzTeamInfo(steamId, serverId, authToken) {
     const resp = await fetch(`https://api.battlemetrics.com/servers/${serverId}/command`, {
         method: "POST",
         headers: {
@@ -347,6 +361,44 @@ async function runTeaminfoCommand(steamId, serverId, authToken) {
 
     const data = await resp.json();
     const result = data.data?.attributes?.result
+    if (!result) {
+        console.error(`Failed to request teaminfo | Status: ${resp.status} | Result: ${result}`);
+        return "error";
+    }
+
+    return result;
+}
+async function getBrTeamInfo(steamId, serverId, authToken) {
+    const resp = await fetch(`https://api.battlemetrics.com/servers/${serverId}/command`, {
+        method: "POST",
+        headers: {
+            "Authorization": `Bearer ${authToken}`,
+            "Content-Type": "application/json",
+            "Accept-Version": "^0.1.0"
+        },
+        body: JSON.stringify({
+            data: {
+                type: "rconCommand",
+                attributes: {
+                    command: "edb0be86-6f5e-4e4b-a655-5fcecd4af11f",
+                    options: {
+                        command: "teaminfo",
+                        steamid: steamId,
+                        format: " "
+                    }
+                }
+            }
+        })
+    })
+
+    if (resp.status !== 200) {
+        console.error(`Failed to request teaminfo | Status: ${resp.status}`);
+        return "error";
+    }
+
+    const data = await resp.json();
+    
+    const result = data.data?.attributes?.result[0]?.children[1]?.children[0]?.children[0]?.reference.result
     if (!result) {
         console.error(`Failed to request teaminfo | Status: ${resp.status} | Result: ${result}`);
         return "error";
