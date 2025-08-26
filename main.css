@@ -8,8 +8,6 @@ body {
     top: 50px;
     left: calc(50dvw + 585px);
 
-    padding: 10px 10px;
-
     min-width: 200px;
     min-height: 100px;
 
@@ -40,6 +38,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    margin: 10px 5px;
 }
 
 .friend-title img {
@@ -62,52 +61,75 @@ body {
     background: #ffffff40;
 }
 
-#friends-container a,
+.player-display-name{
+    font-size: 15px;
+}
 #friends-container p {
-    font-size: 14px;
-    line-height: 1;
+    font-size: 13px;
+}
+.player-display-name,
+#friends-container p {
     margin: 0;
     padding: 0;
-}
 
+    width: 210px;
+    text-wrap: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
 #friends-container h2 {
     font-size: 2rem;
     margin: 0;
     padding: 0;
 }
 
-.friend-container {
+.player-container {
     display: flex;
-    gap: 5px;
+    gap: 3px;
 
-    padding: 3px;
     border-radius: 3px;
     transition: 0.2s;
 
     align-items: center;
-    background: #00000020;
-}
+    background: #151515;
 
-.friend-highlight {
+    border-left: transparent 3px solid;
+    border-right: transparent 3px solid;
+}
+.player-bm-button{
+    width: 30px;
+    height: 50px;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    background: #0b0b0b;
+    z-index: 10;
+}
+.player-bm-button > img{
+    width: 30px !important;
+    height: 30px !important;
+}
+.player-highlight {
     border-bottom: 0px !important;
     border-top: 0px !important;
     border: 3px solid white;
     background: #ffffff20;
-    transform: translateX(-3px);
 }
 
-.friend-container img {
+.player-container img {
     width: 50px;
     height: 50px;
 }
 
-.friend-details {
-    min-width: 230px;
+.player-details {
+    line-height: 1;
+    width: 210px;
     display: flex;
     flex-direction: column;
 
-    gap: 4px;
-
+    gap: 2px;
     justify-content: center;
 }
 
@@ -144,6 +166,10 @@ body {
     justify-content: center;
     align-items: center;
 }
+.ban-details > p{
+    width: 185px !important;
+    font-size: 14px !important;
+}
 
 .ban-data>img {
     width: 25px;
@@ -154,7 +180,7 @@ body {
     position: absolute;
     top: 0;
     left: 0;
-    width: 220px;
+    width: 200px;
     height: 50px;
 
     background: #8e2121;
@@ -178,10 +204,17 @@ body {
 }
 
 .ban-data-wrapper:hover .ban-details {
-    transform: translateX(-220px);
+    transform: translateX(-200px);
     opacity: 1;
     pointer-events: auto;
 }
+
+
+
+
+
+
+
 
 #settings-sidebar {
     padding: 0;
@@ -334,7 +367,8 @@ body {
 
 #friends-comparator-wrapper input {
     padding: 0px 10px;
-    width: 100%;
+    width: calc(100% - 20px);
+    margin: 10px;
     height: 34px;
     font-size: 18px;
     border: 2px solid #434343;

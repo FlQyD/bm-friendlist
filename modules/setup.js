@@ -37,17 +37,19 @@ export async function setup(bmId) {
     getPlayerData(steamId, bmId);
 }
 
-async function getPlayerData(steamId, bmId) {
-    let steamFriends = await getSteamFriendList(steamId);
-    let steamFriendsStatus = "";
+async function getPlayerData(steamId, bmId) {    
+    let [steamFriends, historicFriends] = await Promise.all([
+        getSteamFriendList(steamId),
+        getHistoricFriends(steamId),
+    ]);
 
+    let steamFriendsStatus = "";
     if (steamFriends === "Private") {
         steamFriends = [];
         steamFriendsStatus = "Private";
     }
 
     const rawSteamFriendsIds = steamFriends.map(item => item.steamId);
-    let historicFriends = await getHistoricFriends(steamId);
 
     const realHistoricFriends = [];
     historicFriends.forEach(friend => {

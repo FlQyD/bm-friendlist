@@ -74,20 +74,21 @@ function createFriendElement(friend) {
     container.title = friend.steamId;
     if (friend.origin && friend.origin === "origin") container.style.background = color.seenOnOrigin;
     if (friend.origin && friend.origin === "friend") container.style.background = color.seenOnFriend;
-    container.classList.add("friend-container");
+    container.classList.add("player-container");
 
     const avatar = document.createElement("img");
     avatar.src = friend.avatar === "unknown" ? chrome.runtime.getURL('images/unknown.png') : `https://avatars.cloudflare.steamstatic.com/${friend.avatar}_full.jpg`
     container.appendChild(avatar);
 
     const details = document.createElement("div");
-    details.classList.add("friend-details")
+    details.classList.add("player-details")
     container.appendChild(details);
 
     const name = document.createElement("a");
     name.href = `https://steamcommunity.com/profiles/${friend.steamId}`;
     name.target = "_blank";
     name.innerText = friend.name;
+    name.classList.add("player-display-name")
     details.appendChild(name);
 
     if (friend.lastSeen) {
@@ -114,9 +115,12 @@ function createFriendElement(friend) {
         details.appendChild(sinceElement)
     }
 
+    
     const banData = getBanData(friend.banData);
     container.appendChild(banData);
-
+    
+    const bmButton = getBmButton(friend.steamId);
+    container.appendChild(bmButton);
     return container;
 }
 
@@ -173,6 +177,18 @@ function getBanData(banData) {
     wrapper.appendChild(inner);
     return wrapper;
 }
+function getBmButton(steamId) {
+    const element = document.createElement("a");
+    element.href = `https://www.battlemetrics.com/rcon/players?filter[search]=${steamId}&redirect=1`;
+    element.target = "_blank";
+    element.classList.add("player-bm-button");
+
+    const img = document.createElement("img");
+    img.src = chrome.runtime.getURL('./images/bmLogoSmall.png');
+    element.appendChild(img);
+
+    return element;
+}
 
 
 async function getComparator() {
@@ -190,8 +206,8 @@ async function getComparator() {
         input.classList.remove("input-green");
         input.classList.add("input-yellow");
 
-        const currentHits = document.querySelectorAll(".friend-highlight");
-        currentHits.forEach(element => element.classList.remove("friend-highlight"))
+        const currentHits = document.querySelectorAll(".player-highlight");
+        currentHits.forEach(element => element.classList.remove("player-highlight"))
 
         const steamId = e.target.value;
         let invalidSteamId = false;
@@ -228,10 +244,10 @@ async function getComparator() {
         input.classList.remove("input-yellow");
         input.classList.add("input-green");
 
-        const friends = document.querySelectorAll(".friend-container");
+        const friends = document.querySelectorAll(".player-container");
         friends.forEach(friend => {
             if (combinedFriends.includes(friend.title))
-                friend.classList.add("friend-highlight");
+                friend.classList.add("player-highlight");
         })
     })
 

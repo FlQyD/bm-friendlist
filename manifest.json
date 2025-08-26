@@ -30,6 +30,7 @@
         "images/unknown.png",
         "images/noSignal.png",
         "images/settings.png",
+        "images/bmLogoSmall.png",
 
         "modules/setup.js",
         "modules/display.js",
