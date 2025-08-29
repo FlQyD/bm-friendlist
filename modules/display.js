@@ -62,72 +62,6 @@ function getHistoricFriendElement(historicFriends) {
     return container;
 }
 
-
-async function getComparator() {
-    const element = document.createElement("div");
-    element.id = "friends-comparator-wrapper";
-
-    const input = document.createElement("input");
-    input.id = "compare-input";
-    input.placeholder = "Steam ID | 76561...";
-
-    const { getSteamFriendList, getHistoricFriends } = await import(chrome.runtime.getURL('./modules/setup.js'));
-    input.addEventListener("change", async e => {
-        const input = e.target;
-        input.classList.remove("input-red");
-        input.classList.remove("input-green");
-        input.classList.add("input-yellow");
-
-        const currentHits = document.querySelectorAll(".friend-highlight");
-        currentHits.forEach(element => element.classList.remove("friend-highlight"))
-
-        const steamId = e.target.value;
-        let invalidSteamId = false;
-        if (steamId.length !== 17) invalidSteamId = true;
-        if (isNaN(Number(steamId))) invalidSteamId = true;
-        if (!steamId.startsWith("76561")) invalidSteamId = true;
-        if (invalidSteamId) {
-            input.classList.remove("input-yellow");
-            input.classList.add("input-red");
-            return "escape - wrong steamID"
-        }
-        const combinedFriends = [];
-
-        const steamFriends = await getSteamFriendList(steamId);
-        if (typeof (steamFriends) === "string" && steamFriends !== "Private") {
-            input.classList.remove("input-yellow");
-            input.classList.add("input-red");
-            return "escape - failed to fetch"
-        }
-        if (steamFriends !== "Private")
-            steamFriends.forEach(friend => combinedFriends.push(friend.steamId));
-
-        const historicFriends = await getHistoricFriends(steamId);
-        if (typeof (historicFriends) === "string") {
-            input.classList.remove("input-yellow");
-            input.classList.add("input-red");
-            return "escape - failed to fetch"
-        }
-        historicFriends.forEach(friend => {
-            if (!combinedFriends.includes(friend.steamId))
-                combinedFriends.push(friend.steamId);
-        })        
-
-        input.classList.remove("input-yellow");
-        input.classList.add("input-green");
-
-        const friends = document.querySelectorAll(".player-container");
-        
-        friends.forEach(friend => {
-            if (combinedFriends.includes(friend.title))
-                friend.classList.add("friend-highlight");
-        })
-    })
-
-    element.appendChild(input);
-    return element;
-}
-
 export function showTeamMembers(teaminfo) {
     const main = document.getElementById("RCONContainer");
     const container = getContainer("team-container")
@@ -182,7 +116,7 @@ function createPlayerElement(player) {
     container.appendChild(avatar);
 
     const details = document.createElement("div");
-    details.classList.add("friend-details")
+    details.classList.add("player-details")
     container.appendChild(details);
 
     const name = document.createElement("a");
@@ -218,8 +152,11 @@ function createPlayerElement(player) {
     const banData = getBanData(player.banData);
     container.appendChild(banData);
 
+    const bmButton = getBmButton(player.steamId);
+    container.appendChild(bmButton);
     return container;
 }
+
 function getBanData(banData) {
     const wrapper = document.createElement("div");
     wrapper.classList.add("ban-data-wrapper");
@@ -272,4 +209,81 @@ function getBanData(banData) {
 
     wrapper.appendChild(inner);
     return wrapper;
+}
+function getBmButton(steamId) {
+    const element = document.createElement("a");
+    element.href = `https://www.battlemetrics.com/rcon/players?filter[search]=${steamId}&redirect=1`;
+    element.target = "_blank";
+    element.classList.add("player-bm-button");
+
+    const img = document.createElement("img");
+    img.src = chrome.runtime.getURL('./images/bmLogoSmall.png');
+    element.appendChild(img);
+
+    return element;
+}
+
+
+async function getComparator() {
+    const element = document.createElement("div");
+    element.id = "friends-comparator-wrapper";
+
+    const input = document.createElement("input");
+    input.id = "compare-input";
+    input.placeholder = "Steam ID | 76561...";
+
+    const { getSteamFriendList, getHistoricFriends } = await import(chrome.runtime.getURL('./modules/setup.js'));
+    input.addEventListener("change", async e => {
+        const input = e.target;
+        input.classList.remove("input-red");
+        input.classList.remove("input-green");
+        input.classList.add("input-yellow");
+
+        const currentHits = document.querySelectorAll(".player-highlight");
+        currentHits.forEach(element => element.classList.remove("player-highlight"))
+
+        const steamId = e.target.value;
+        let invalidSteamId = false;
+        if (steamId.length !== 17) invalidSteamId = true;
+        if (isNaN(Number(steamId))) invalidSteamId = true;
+        if (!steamId.startsWith("76561")) invalidSteamId = true;
+        if (invalidSteamId) {
+            input.classList.remove("input-yellow");
+            input.classList.add("input-red");
+            return "escape - wrong steamID"
+        }
+        const combinedFriends = [];
+
+        const steamFriends = await getSteamFriendList(steamId);
+        if (typeof (steamFriends) === "string" && steamFriends !== "Private") {
+            input.classList.remove("input-yellow");
+            input.classList.add("input-red");
+            return "escape - failed to fetch"
+        }
+        if (steamFriends !== "Private")
+            steamFriends.forEach(friend => combinedFriends.push(friend.steamId));
+
+        const historicFriends = await getHistoricFriends(steamId);
+        if (typeof (historicFriends) === "string") {
+            input.classList.remove("input-yellow");
+            input.classList.add("input-red");
+            return "escape - failed to fetch"
+        }
+        historicFriends.forEach(friend => {
+            if (!combinedFriends.includes(friend.steamId))
+                combinedFriends.push(friend.steamId);
+        })
+
+        input.classList.remove("input-yellow");
+        input.classList.add("input-green");
+
+        const friends = document.querySelectorAll(".player-container");
+        friends.forEach(friend => {
+            if (combinedFriends.includes(friend.title))
+                friend.classList.add("player-highlight");
+        })
+    })
+
+    element.appendChild(input);
+    return element;
 }

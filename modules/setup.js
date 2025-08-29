@@ -44,9 +44,7 @@ async function getPlayerData(steamId, bmId) {
         getTeaminfo(bmId, steamId)
     ]);
 
-
     let steamFriendsStatus = "";
-
     if (steamFriends === "Private") {
         steamFriends = [];
         steamFriendsStatus = "Private";
@@ -105,7 +103,7 @@ async function getPlayerData(steamId, bmId) {
         displaySteamFriends.push(newSteamFriend);
     })
 
-    if (typeof (teaminfo) !== "string")
+    if (typeof (teaminfo) !== "string") {
         teaminfo.members = teaminfo.members.map(member => {
             const playerInfo = {
                 steamId: member,
@@ -122,6 +120,7 @@ async function getPlayerData(steamId, bmId) {
             playerInfo.banData = currentPlayerData.banData;
             return playerInfo
         })
+    }
 
     realHistoricFriends.forEach(friend => {
         const newHistoricFriend = {};
@@ -252,9 +251,6 @@ async function getTeaminfo(bmId, steamId) {
     const lastServer = await getLastServer(bmId, authToken);
     if (!lastServer) return "error"
 
-    console.log(lastServer);
-
-
     let teaminfoString = "";
     //BattleZone
     if (lastServer.orgId === "29251") teaminfoString = await getBzTeamInfo(steamId, lastServer.id, authToken)
@@ -262,12 +258,11 @@ async function getTeaminfo(bmId, steamId) {
     if (lastServer.orgId === "18611") teaminfoString = await getBrTeamInfo(steamId, lastServer.id, authToken);
     if (!teaminfoString || teaminfoString === "error") return { teamId: "error", members: [], server: lastServer.name, raw: teaminfoString }
 
-
-
     if (teaminfoString === "error") return "error";
-    if (teaminfoString === "Player is not in a team" || teaminfoString === "Player not found") {
-        return { teamId: "error", members: [], server: lastServer.name, raw: teaminfoString }
-    }
+
+    if (teaminfoString === "Player is not in a team" || teaminfoString === "Player not found")
+        return { teamId: -1, members: [], server: lastServer.name, raw: teaminfoString }
+
 
     const teamMembers = [];
     let teamId = -1;
@@ -397,7 +392,7 @@ async function getBrTeamInfo(steamId, serverId, authToken) {
     }
 
     const data = await resp.json();
-    
+
     const result = data.data?.attributes?.result[0]?.children[1]?.children[0]?.children[0]?.reference.result
     if (!result) {
         console.error(`Failed to request teaminfo | Status: ${resp.status} | Result: ${result}`);
